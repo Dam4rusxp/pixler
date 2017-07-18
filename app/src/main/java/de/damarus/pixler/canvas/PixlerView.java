@@ -159,17 +159,18 @@ public class PixlerView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        viewport = new Rect(0, 0, w, h);
-
+        // Those are both 0 when the view is displayed for the first time
         if (oldw == 0 && oldh == 0) {
+            viewport = new Rect(0, 0, w, h);
+
             int edge = Math.max(w, h);
             if (config.getLayers().isEmpty()) createStartupBitmap(edge, edge);
 
             drawMatrix.postScale(DPP, DPP);
             afterMovement();
-        }
 
-        initialized = true;
+            initialized = true;
+        }
     }
 
     private void createStartupBitmap(int wholeWidth, int wholeHeight) {
