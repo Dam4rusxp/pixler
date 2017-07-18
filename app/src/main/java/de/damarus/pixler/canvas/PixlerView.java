@@ -114,6 +114,8 @@ public class PixlerView extends View {
                 return true;
             }
         });
+        // Remove the double tap listener reference, to get more reliable single tap triggers
+        detector.setOnDoubleTapListener(null);
 
         ScaleGestureDetector scaleDetector = new ScaleGestureDetector(getContext(), new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
