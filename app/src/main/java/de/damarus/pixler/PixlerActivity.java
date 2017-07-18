@@ -52,6 +52,7 @@ public class PixlerActivity extends AppCompatActivity
     FloatingActionButton fabSecondaryColor;
 
     private RelativeLayout navHeader;
+    private RetainedPixlerFragment retainedState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,9 +79,7 @@ public class PixlerActivity extends AppCompatActivity
         // Color Pickers
         fabPrimaryColor.setOnClickListener(v -> {
             DialogFragment frag = ColorPickerDialog.newInstance(mainCanvas.getConfig().getColor(), c -> {
-                fabPrimaryColor.setColorNormal(c);
-                fabPrimaryColor.setColorPressed(c);
-                mainCanvas.getConfig().setColor(c);
+                updateColors(c, retainedState.getSecondaryColor());
             });
 
             frag.show(getSupportFragmentManager(), "color-primary");
@@ -88,31 +87,38 @@ public class PixlerActivity extends AppCompatActivity
 
         fabSecondaryColor.setOnClickListener(v -> {
             // Swap primary and secondary color
-            int secondary = fabPrimaryColor.getColorNormal();
-            int primary = fabSecondaryColor.getColorNormal();
+            int primary = fabPrimaryColor.getColorNormal();
+            int secondary = fabSecondaryColor.getColorNormal();
 
-            fabSecondaryColor.setColorNormal(secondary);
-            fabSecondaryColor.setColorPressed(secondary);
-
-            fabPrimaryColor.setColorNormal(primary);
-            fabPrimaryColor.setColorPressed(primary);
-
-            mainCanvas.getConfig().setColor(primary);
+            updateColors(secondary, primary);
         });
 
         // Restore state
         FragmentManager fm = getSupportFragmentManager();
-        RetainedPixlerFragment retainedPic = (RetainedPixlerFragment) fm.findFragmentByTag(TAG_RETAINED_PIC);
+        retainedState = (RetainedPixlerFragment) fm.findFragmentByTag(TAG_RETAINED_PIC);
 
-        if (retainedPic == null) {
-            retainedPic = new RetainedPixlerFragment();
-            fm.beginTransaction().add(retainedPic, TAG_RETAINED_PIC).commit();
+        if (retainedState == null) {
+            retainedState = new RetainedPixlerFragment();
+            fm.beginTransaction().add(retainedState, TAG_RETAINED_PIC).commit();
 
-            retainedPic.setRetainedState(mainCanvas.getConfig());
-            mainCanvas.getConfig().setColor(ContextCompat.getColor(this, R.color.pixlerPrimary));
+            retainedState.setRetainedState(mainCanvas.getConfig());
+            updateColors(ContextCompat.getColor(this, R.color.pixlerPrimary),
+                    ContextCompat.getColor(this, R.color.pixlerSecondary));
         } else {
-            mainCanvas.setConfig(retainedPic.getRetainedState());
+            mainCanvas.setConfig(retainedState.getRetainedState());
+            updateColors(mainCanvas.getConfig().getColor(), retainedState.getSecondaryColor());
         }
+    }
+
+    private void updateColors(int primary, int secondary) {
+        fabPrimaryColor.setColorNormal(primary);
+        fabPrimaryColor.setColorPressed(primary);
+
+        fabSecondaryColor.setColorNormal(secondary);
+        fabSecondaryColor.setColorPressed(secondary);
+
+        mainCanvas.getConfig().setColor(primary);
+        retainedState.setSecondaryColor(secondary);
     }
 
     @Override

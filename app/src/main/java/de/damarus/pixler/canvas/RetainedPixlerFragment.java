@@ -7,6 +7,7 @@ import android.support.v4.app.Fragment;
 public class RetainedPixlerFragment extends Fragment {
 
     private PixlerState state;
+    private int secondaryColor;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -20,5 +21,13 @@ public class RetainedPixlerFragment extends Fragment {
 
     public void setRetainedState(PixlerState state) {
         this.state = state;
+    }
+
+    public int getSecondaryColor() {
+        return secondaryColor;
+    }
+
+    public void setSecondaryColor(int secondaryColor) {
+        this.secondaryColor = secondaryColor;
     }
 }
