@@ -1,0 +1,11 @@
+*.apk
+
+local.properties
+
+# JetBrains project files
+*.iml
+.idea/
+
+# Gradle caches
+.gradle/
+build/
