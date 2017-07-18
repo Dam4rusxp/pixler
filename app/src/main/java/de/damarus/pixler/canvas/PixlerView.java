@@ -68,6 +68,9 @@ public class PixlerView extends View {
 
                 inverseMatrix.mapPoints(touchPoint);
 
+                // Do not handle if the tap was outside of the image
+                if (!getImageBounds().contains(touchPoint[0], touchPoint[1])) return false;
+
                 PencilAction action = new PencilAction();
                 action.setColor(config.getColor());
                 action.apply(config.getLayers().get(config.getCurrentLayer()), touchPoint[0], touchPoint[1]);
@@ -90,7 +93,7 @@ public class PixlerView extends View {
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 RectF window = getWindow();
 
-                float[] bounds = getBounds(window);
+                float[] bounds = getScrollBounds(window);
 
                 lastX = window.left;
                 lastY = window.top;
@@ -207,7 +210,7 @@ public class PixlerView extends View {
         if (clamp) {
             RectF window = getWindow();
 
-            float[] bounds = getBounds(window);
+            float[] bounds = getScrollBounds(window);
 
             float xSpace = viewport.width() - window.width();
             float ySpace = viewport.height() - window.height();
@@ -234,21 +237,25 @@ public class PixlerView extends View {
     }
 
     private RectF getWindow() {
-        RectF rWindow = new RectF(
-                0,
-                0,
-                config.getLayers().get(0).getWidth(),
-                config.getLayers().get(0).getHeight());
+        RectF rWindow = getImageBounds();
         drawMatrix.mapRect(rWindow);
         return rWindow;
     }
 
-    private float[] getBounds(RectF window) {
+    private float[] getScrollBounds(RectF window) {
         return new float[]{
                 viewport.width() - window.width() - OVERSCROLL,
                 OVERSCROLL,
                 viewport.height() - window.height() - OVERSCROLL,
                 OVERSCROLL};
+    }
+
+    private RectF getImageBounds() {
+        return new RectF(
+                0,
+                0,
+                config.getLayers().get(0).getWidth(),
+                config.getLayers().get(0).getHeight());
     }
 
     @SuppressWarnings("Duplicates")
