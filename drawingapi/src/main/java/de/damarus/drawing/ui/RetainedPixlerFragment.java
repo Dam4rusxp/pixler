@@ -1,13 +1,13 @@
-package de.damarus.pixler.canvas;
+package de.damarus.drawing.ui;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import de.damarus.drawing.PixlerController;
 
 public class RetainedPixlerFragment extends Fragment {
 
-    private PixlerState state;
-    private int secondaryColor;
+    private PixlerController state;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -15,19 +15,11 @@ public class RetainedPixlerFragment extends Fragment {
         setRetainInstance(true);
     }
 
-    public PixlerState getRetainedState() {
+    public PixlerController getRetainedState() {
         return state;
     }
 
-    public void setRetainedState(PixlerState state) {
+    public void setRetainedState(PixlerController state) {
         this.state = state;
-    }
-
-    public int getSecondaryColor() {
-        return secondaryColor;
-    }
-
-    public void setSecondaryColor(int secondaryColor) {
-        this.secondaryColor = secondaryColor;
     }
 }

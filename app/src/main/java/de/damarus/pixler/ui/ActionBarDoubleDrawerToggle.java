@@ -1,4 +1,4 @@
-package de.damarus.pixler;
+package de.damarus.pixler.ui;
 
 import android.app.Activity;
 import android.support.v4.view.GravityCompat;

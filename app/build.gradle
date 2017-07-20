@@ -2,17 +2,17 @@ apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "26.0.0"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
         applicationId "de.damarus.pixler"
         versionCode 1
         versionName "1.0"
 
-        minSdkVersion 21
+        minSdkVersion rootProject.ext.minSdkVersion
 
-        targetSdkVersion 25
+        targetSdkVersion rootProject.ext.targetSdkVersion
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
@@ -59,25 +59,32 @@ repositories {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
 
+    compile project(path: ':drawingapi', configuration: "debug")
+
     // Support libs
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
-    compile 'com.android.support:support-v4:25.3.1'
+    compile "com.android.support:appcompat-v7:${supportLibVersion}"
+    compile "com.android.support:design:${supportLibVersion}"
+    compile "com.android.support:support-v4:${supportLibVersion}"
 
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+
+    // Core utils
+    compile "com.google.guava:guava:${guavaVersion}"
 
     // Color picker
     compile 'com.github.madrapps:pikolo:1.1.6'
 
     // Automatic view binding
-    compile 'com.jakewharton:butterknife:8.6.0'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.6.0'
+    compile "com.jakewharton:butterknife:${butterKnifeVersion}"
+    annotationProcessor "com.jakewharton:butterknife-compiler:${butterKnifeVersion}"
 
     // Floating Action Button with menu support
     compile 'com.github.clans:fab:1.6.4'
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.google.code.findbugs', module: 'jsr305'
     })
     testCompile 'junit:junit:4.12'
+//    testCompile "org.robolectric:robolectric:3.3.2"
 }

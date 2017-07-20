@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <de.damarus.drawing.ui.PixlerCanvasView
+            android:id="@+id/main_canvas"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    <!-- Undo / Redo -->
+    <com.github.clans.fab.FloatingActionMenu
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="@dimen/fab_margin"
+            tools:ignore="RelativeOverlap">
+
+        <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab_redo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/redo"
+                app:fab_label="Redo"/>
+
+        <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/fab_undo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/undo"
+                app:fab_label="Undo"/>
+    </com.github.clans.fab.FloatingActionMenu>
+
+    <!-- Color switchers -->
+    <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/pixlerPrimaryColor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="@dimen/fab_margin"
+            android:layout_marginBottom="@dimen/fab_margin"/>
+
+    <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/pixlerSecondaryColor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_above="@id/pixlerPrimaryColor"
+            android:layout_marginStart="@dimen/fab_margin"
+            app:fab_size="mini"/>
+</RelativeLayout>

@@ -1,4 +1,4 @@
-package de.damarus.pixler.canvas;
+package de.damarus.drawing.ui;
 
 import android.content.Context;
 import android.graphics.*;
@@ -8,16 +8,13 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.OverScroller;
-import de.damarus.pixler.drawing.Action;
-import de.damarus.pixler.drawing.PencilAction;
-import org.jetbrains.annotations.NotNull;
+import de.damarus.drawing.PixlerController;
+import de.damarus.drawing.data.Composition;
 
-public class PixlerView extends View {
+public class PixlerCanvasView extends View implements PixlerController.PixlerListener {
 
     public static final int DPP = 20;
     public static final int OVERSCROLL = 150;
-
-    private boolean initialized = false;
 
     private OverScroller scroller;
     private float lastX, lastY;
@@ -28,24 +25,26 @@ public class PixlerView extends View {
     private Matrix drawMatrix = new Matrix();
     private Matrix inverseMatrix = new Matrix();
 
-    private PixlerState config = new PixlerState();
+    private int longEdge = -1;
 
-    public PixlerView(Context context) {
+    private PixlerController main;
+
+    public PixlerCanvasView(Context context) {
         super(context);
         whenConstructing();
     }
 
-    public PixlerView(Context context, AttributeSet attrs) {
+    public PixlerCanvasView(Context context, AttributeSet attrs) {
         super(context, attrs);
         whenConstructing();
     }
 
-    public PixlerView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public PixlerCanvasView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         whenConstructing();
     }
 
-    public PixlerView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public PixlerCanvasView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         whenConstructing();
     }
@@ -68,16 +67,13 @@ public class PixlerView extends View {
 
                 inverseMatrix.mapPoints(touchPoint);
 
-                // Do not handle if the tap was outside of the image
-                if (!getImageBounds().contains(touchPoint[0], touchPoint[1])) return false;
 
-                PencilAction action = new PencilAction();
-                action.setColor(config.getColor());
-                action.apply(config.getLayers().get(config.getCurrentLayer()), touchPoint[0], touchPoint[1]);
-                config.getActionStack().push(action);
-                config.getRedoStack().clear();
+                if (main != null) {
+                    // Do not handle if the tap was outside of the image
+                    if (!getImageBounds().contains(touchPoint[0], touchPoint[1])) return false;
 
-                invalidate();
+                    main.applyActionAt(touchPoint[0], touchPoint[1]);
+                }
 
                 return true;
             }
@@ -85,7 +81,7 @@ public class PixlerView extends View {
             @Override
             public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
                 drawMatrix.postTranslate(-distanceX, -distanceY);
-                afterMovement();
+                updateCamera();
                 return true;
             }
 
@@ -125,7 +121,7 @@ public class PixlerView extends View {
                 if (Float.isNaN(factor) || Float.isInfinite(factor)) return false;
 
                 drawMatrix.postScale(factor, factor, detector.getFocusX(), detector.getFocusY());
-                afterMovement();
+                updateCamera();
 
                 return true;
             }
@@ -152,37 +148,25 @@ public class PixlerView extends View {
         if (ySpace > OVERSCROLL * 2) diffY = 0;
 
         drawMatrix.postTranslate(-diffX, -diffY);
-        afterMovement(false);
+        updateCamera(false);
         lastX = x;
         lastY = y;
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        // Those are both 0 when the view is displayed for the first time
-        if (oldw == 0 && oldh == 0) {
-            viewport = new Rect(0, 0, w, h);
+        viewport = new Rect(0, 0, w, h);
 
-            int edge = Math.max(w, h);
-            if (config.getLayers().isEmpty()) createStartupBitmap(edge, edge);
+        // Those are both 0 when the view is displayed for the first time
+        if (oldw == 0 && oldh == 0 && !isInEditMode()) {
+            longEdge = Math.max(w, h);
+
+            if (main != null) main.initialize(longEdge, longEdge);
 
             drawMatrix.postScale(DPP, DPP);
-            afterMovement();
-
-            initialized = true;
         }
-    }
 
-    private void createStartupBitmap(int wholeWidth, int wholeHeight) {
-        int width = wholeWidth / DPP;
-        int height = wholeHeight / DPP;
-
-        Bitmap firstLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        config.addLayer(firstLayer);
-        invalidate();
-
-        Canvas layerCanvas = new Canvas(firstLayer);
-        layerCanvas.drawRGB(128, 128, 128);
+        updateCamera();
     }
 
     @Override
@@ -194,8 +178,8 @@ public class PixlerView extends View {
 //        canvas.drawBitmap(picBitmap, null, viewport, drawPaint);
         canvas.clipRect(viewport);
         canvas.setMatrix(drawMatrix);
-        if (!isInEditMode()) {
-            for (Bitmap layer : config.getLayers()) {
+        if (!isInEditMode() && main != null && main.getComposition() != null) {
+            for (Bitmap layer : main.getComposition().getLayers()) {
                 canvas.drawBitmap(layer, viewport.left, viewport.top, drawPaint);
             }
         } else {
@@ -205,11 +189,11 @@ public class PixlerView extends View {
         // UI...
     }
 
-    private void afterMovement() {
-        afterMovement(true);
+    private void updateCamera() {
+        updateCamera(true);
     }
 
-    private void afterMovement(boolean clamp) {
+    private void updateCamera(boolean clamp) {
         if (clamp) {
             RectF window = getWindow();
 
@@ -254,39 +238,31 @@ public class PixlerView extends View {
     }
 
     private RectF getImageBounds() {
+        if (main == null || main.getComposition() == null) return new RectF();
+
         return new RectF(
                 0,
                 0,
-                config.getLayers().get(0).getWidth(),
-                config.getLayers().get(0).getHeight());
+                main.getComposition().getWidth(),
+                main.getComposition().getHeight());
     }
 
-    @SuppressWarnings("Duplicates")
-    public void undoAction() {
-        if (!config.getActionStack().isEmpty()) {
-            Action undoAction = config.getActionStack().pop();
-            config.getRedoStack().push(undoAction);
-            undoAction.undoRedo();
-            invalidate();
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    public void redoAction() {
-        if (!config.getRedoStack().isEmpty()) {
-            Action redoAction = config.getRedoStack().pop();
-            config.getActionStack().push(redoAction);
-            redoAction.undoRedo();
-            invalidate();
-        }
-    }
-
-    public PixlerState getConfig() {
-        return config;
-    }
-
-    public void setConfig(@NotNull PixlerState config) {
-        this.config = config;
+    @Override
+    public void onCompositionChanged(Composition composition) {
         invalidate();
+    }
+
+    @Override
+    public void onColorChanged(int color) {
+
+    }
+
+    @Override
+    public void onRegistered(PixlerController controller) {
+        main = controller;
+
+        if (main.getComposition() == null && longEdge != -1) {
+            main.initialize(longEdge, longEdge);
+        }
     }
 }

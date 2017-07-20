@@ -1,4 +1,4 @@
-package de.damarus.pixler;
+package de.damarus.pixler.ui;
 
 import android.app.Dialog;
 import android.graphics.PorterDuff;
@@ -12,6 +12,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.madrapps.pikolo.HSLColorPicker;
 import com.madrapps.pikolo.listeners.SimpleColorSelectionListener;
+import de.damarus.pixler.R;
 
 public class ColorPickerDialog extends DialogFragment {
 
