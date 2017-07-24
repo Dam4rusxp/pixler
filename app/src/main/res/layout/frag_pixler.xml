@@ -5,7 +5,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-    <de.damarus.drawing.ui.PixlerCanvasView
+    <de.damarus.pixler.ui.PixlerCanvasView
             android:id="@+id/main_canvas"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>

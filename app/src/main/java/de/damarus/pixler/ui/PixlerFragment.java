@@ -11,12 +11,11 @@ import android.view.ViewGroup;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.github.clans.fab.FloatingActionButton;
-import de.damarus.drawing.PixlerController;
 import de.damarus.drawing.data.Composition;
-import de.damarus.drawing.ui.PixlerCanvasView;
+import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
 
-public class PixlerFragment extends Fragment implements PixlerController.PixlerListener {
+public class PixlerFragment extends Fragment implements PixlerManager.PixlerListener {
 
     @BindView(R.id.main_canvas)
     PixlerCanvasView canvas;
@@ -32,8 +31,6 @@ public class PixlerFragment extends Fragment implements PixlerController.PixlerL
 
     @BindView(R.id.pixlerSecondaryColor)
     FloatingActionButton fabSecondaryColor;
-
-    private PixlerController con;
 
     // Required empty constructor
     public PixlerFragment() {
@@ -53,24 +50,26 @@ public class PixlerFragment extends Fragment implements PixlerController.PixlerL
         ButterKnife.bind(this, root);
 
         // Undo/redo menu
-        fabUndo.setOnClickListener(v -> con.undoAction());
-        fabRedo.setOnClickListener(v -> con.redoAction());
+        fabUndo.setOnClickListener(v -> PixlerManager.getInstance().undoAction());
+        fabRedo.setOnClickListener(v -> PixlerManager.getInstance().redoAction());
 
         // Color Pickers
         fabPrimaryColor.setOnClickListener(v -> {
-            DialogFragment frag = ColorPickerDialog.newInstance(con.getColor(), c -> {
-                con.setColor(c);
-            });
+            DialogFragment frag = ColorPickerDialog.newInstance(
+                    fabPrimaryColor.getColorNormal(),
+                    c -> PixlerManager.getInstance().changeColor(c));
 
             frag.show(getActivity().getSupportFragmentManager(), "color-primary");
         });
 
         fabSecondaryColor.setOnClickListener(v -> {
             // Swap primary and secondary color
-            int temp = fabSecondaryColor.getColorNormal();
-            fabSecondaryColor.setColorNormal(con.getColor());
-            fabSecondaryColor.setColorPressed(con.getColor());
-            con.setColor(temp);
+            int nowPrimary = fabSecondaryColor.getColorNormal();
+            int nowSecondary = fabPrimaryColor.getColorNormal();
+
+            fabSecondaryColor.setColorNormal(nowSecondary);
+            fabSecondaryColor.setColorPressed(nowSecondary);
+            PixlerManager.getInstance().changeColor(nowPrimary);
         });
 
         if (savedInstanceState != null) {
@@ -79,12 +78,23 @@ public class PixlerFragment extends Fragment implements PixlerController.PixlerL
             fabSecondaryColor.setColorPressed(color);
         }
 
-        if (con != null) {
-            con.registerListener(canvas);
-            onColorChanged(con.getColor());
-        }
-
         return root;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        PixlerManager.getInstance().registerListener(this);
+        PixlerManager.getInstance().registerListener(canvas);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        PixlerManager.getInstance().unregisterListener(this);
+        PixlerManager.getInstance().unregisterListener(canvas);
     }
 
     @Override
@@ -95,8 +105,11 @@ public class PixlerFragment extends Fragment implements PixlerController.PixlerL
     }
 
     @Override
-    public void onCompositionChanged(Composition composition) {
+    public void onActiveLayerChanged(int selectedLayer) {
+    }
 
+    @Override
+    public void onCompositionChanged(Composition composition, int layer) {
     }
 
     @Override
@@ -108,14 +121,6 @@ public class PixlerFragment extends Fragment implements PixlerController.PixlerL
     }
 
     @Override
-    public void onRegistered(PixlerController controller) {
-        if (con != null) {
-            con.unregisterListener(canvas);
-            con.unregisterListener(this);
-        }
-
-        con = controller;
-        if (canvas != null) con.registerListener(canvas);
-        onColorChanged(con.getColor());
+    public void onRegistered() {
     }
 }

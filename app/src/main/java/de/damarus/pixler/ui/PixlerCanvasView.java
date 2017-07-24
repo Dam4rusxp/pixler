@@ -1,4 +1,4 @@
-package de.damarus.drawing.ui;
+package de.damarus.pixler.ui;
 
 import android.content.Context;
 import android.graphics.*;
@@ -8,10 +8,10 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.OverScroller;
-import de.damarus.drawing.PixlerController;
 import de.damarus.drawing.data.Composition;
+import de.damarus.pixler.PixlerManager;
 
-public class PixlerCanvasView extends View implements PixlerController.PixlerListener {
+public class PixlerCanvasView extends View implements PixlerManager.PixlerListener {
 
     public static final int DPP = 20;
     public static final int OVERSCROLL = 150;
@@ -25,9 +25,7 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
     private Matrix drawMatrix = new Matrix();
     private Matrix inverseMatrix = new Matrix();
 
-    private int longEdge = -1;
-
-    private PixlerController main;
+    private Composition currentComposition;
 
     public PixlerCanvasView(Context context) {
         super(context);
@@ -52,6 +50,8 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
     private void whenConstructing() {
         drawPaint.setAntiAlias(false);
 
+        drawMatrix.postScale(DPP, DPP);
+
         scroller = new OverScroller(getContext());
 
         GestureDetector detector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
@@ -68,11 +68,11 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
                 inverseMatrix.mapPoints(touchPoint);
 
 
-                if (main != null) {
+                if (PixlerManager.getInstance().isInitialized()) {
                     // Do not handle if the tap was outside of the image
                     if (!getImageBounds().contains(touchPoint[0], touchPoint[1])) return false;
 
-                    main.applyActionAt(touchPoint[0], touchPoint[1]);
+                    PixlerManager.getInstance().onSingleTap(touchPoint[0], touchPoint[1]);
                 }
 
                 return true;
@@ -159,11 +159,9 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
 
         // Those are both 0 when the view is displayed for the first time
         if (oldw == 0 && oldh == 0 && !isInEditMode()) {
-            longEdge = Math.max(w, h);
+//            longEdge = Math.max(w, h);
 
-            if (main != null) main.initialize(longEdge, longEdge);
-
-            drawMatrix.postScale(DPP, DPP);
+//            if (main != null) main.initialize(longEdge, longEdge);
         }
 
         updateCamera();
@@ -178,8 +176,8 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
 //        canvas.drawBitmap(picBitmap, null, viewport, drawPaint);
         canvas.clipRect(viewport);
         canvas.setMatrix(drawMatrix);
-        if (!isInEditMode() && main != null && main.getComposition() != null) {
-            for (Bitmap layer : main.getComposition().getLayers()) {
+        if (currentComposition != null) {
+            for (Bitmap layer : currentComposition.getLayers()) {
                 canvas.drawBitmap(layer, viewport.left, viewport.top, drawPaint);
             }
         } else {
@@ -238,31 +236,30 @@ public class PixlerCanvasView extends View implements PixlerController.PixlerLis
     }
 
     private RectF getImageBounds() {
-        if (main == null || main.getComposition() == null) return new RectF();
+        if (currentComposition == null) return new RectF();
 
         return new RectF(
                 0,
                 0,
-                main.getComposition().getWidth(),
-                main.getComposition().getHeight());
+                currentComposition.getWidth(),
+                currentComposition.getHeight());
     }
 
     @Override
-    public void onCompositionChanged(Composition composition) {
+    public void onActiveLayerChanged(int selectedLayer) {
+    }
+
+    @Override
+    public void onCompositionChanged(Composition composition, int layer) {
+        currentComposition = composition;
         invalidate();
     }
 
     @Override
     public void onColorChanged(int color) {
-
     }
 
     @Override
-    public void onRegistered(PixlerController controller) {
-        main = controller;
-
-        if (main.getComposition() == null && longEdge != -1) {
-            main.initialize(longEdge, longEdge);
-        }
+    public void onRegistered() {
     }
 }

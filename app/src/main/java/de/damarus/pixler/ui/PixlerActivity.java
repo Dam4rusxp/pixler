@@ -3,8 +3,6 @@ package de.damarus.pixler.ui;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -15,8 +13,7 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import de.damarus.drawing.PixlerController;
-import de.damarus.drawing.ui.RetainedPixlerFragment;
+import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
 
 public class PixlerActivity extends AppCompatActivity
@@ -37,8 +34,6 @@ public class PixlerActivity extends AppCompatActivity
     ListView layerDrawer;
 
     private RelativeLayout navHeader;
-
-    private PixlerController controller;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,22 +58,8 @@ public class PixlerActivity extends AppCompatActivity
         }
         
         // Restore state
-        FragmentManager fm = getSupportFragmentManager();
-        RetainedPixlerFragment retainedState = (RetainedPixlerFragment) fm.findFragmentByTag(TAG_RETAINED_PIC);
-
-        if (retainedState == null) {
-            controller = new PixlerController();
-            controller.setColor(ContextCompat.getColor(this, R.color.pixlerPrimary));
-
-            retainedState = new RetainedPixlerFragment();
-            fm.beginTransaction().add(retainedState, TAG_RETAINED_PIC).commit();
-
-            retainedState.setRetainedState(controller);
-        } else {
-            controller = retainedState.getRetainedState();
-        }
-
-        controller.registerListener(frag);
+        PixlerManager pixl = PixlerManager.getInstance();
+        pixl.registerListener(frag);
     }
 
     @Override

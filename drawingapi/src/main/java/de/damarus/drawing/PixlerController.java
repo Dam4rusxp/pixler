@@ -1,17 +1,12 @@
 package de.damarus.drawing;
 
 import android.graphics.Canvas;
-import android.support.annotation.NonNull;
 import de.damarus.drawing.action.Action;
 import de.damarus.drawing.action.PencilAction;
 import de.damarus.drawing.data.Composition;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class PixlerController {
 
@@ -25,12 +20,20 @@ public class PixlerController {
     private transient Deque<Action> actionStack = new ArrayDeque<>();
     private transient Deque<Action> redoStack = new ArrayDeque<>();
 
-    private List<PixlerListener> listeners = new ArrayList<>();
+    public void initialize(Composition comp) {
+        if (composition != null) throw new IllegalStateException();
+
+        composition = comp;
+    }
 
     public void initialize(int w, int h) {
-        if (composition != null) return;
+        if (composition != null) throw new IllegalStateException();
 
         createStartupBitmap(w, h);
+    }
+
+    public boolean isInitialized() {
+        return composition != null;
     }
 
     private void createStartupBitmap(int wholeWidth, int wholeHeight) {
@@ -41,20 +44,6 @@ public class PixlerController {
 
         Canvas layerCanvas = new Canvas(composition.getActiveLayer());
         layerCanvas.drawRGB(128, 128, 128);
-
-        triggerColorChange();
-        triggerCompositionChange();
-    }
-
-    public void registerListener(@NonNull PixlerListener listener) {
-        if (listeners.contains(checkNotNull(listener))) return;
-
-        listeners.add(listener);
-        listener.onRegistered(this);
-    }
-
-    public void unregisterListener(@NonNull PixlerListener listener) {
-        listeners.remove(checkNotNull(listener));
     }
 
     public void applyActionAt(float x, float y) {
@@ -63,30 +52,28 @@ public class PixlerController {
         currentAction.apply(composition.getActiveLayer(), x, y);
         getActionStack().push(currentAction);
         getRedoStack().clear();
-
-        triggerCompositionChange();
     }
 
     @SuppressWarnings("Duplicates")
-    public void undoAction() {
+    public boolean undoAction() {
         if (!getActionStack().isEmpty()) {
             Action undoAction = getActionStack().pop();
             getRedoStack().push(undoAction);
             undoAction.undoRedo();
-
-            triggerCompositionChange();
+            return true;
         }
+        return false;
     }
 
     @SuppressWarnings("Duplicates")
-    public void redoAction() {
+    public boolean redoAction() {
         if (!getRedoStack().isEmpty()) {
             Action redoAction = getRedoStack().pop();
             getActionStack().push(redoAction);
             redoAction.undoRedo();
-
-            triggerCompositionChange();
+            return true;
         }
+        return false;
     }
 
     public Deque<Action> getActionStack() {
@@ -101,38 +88,11 @@ public class PixlerController {
         return composition;
     }
 
-    public void setComposition(Composition comp) {
-        this.composition = comp;
-        triggerCompositionChange();
-    }
-
     public int getColor() {
         return color;
     }
 
     public void setColor(int color) {
         this.color = color;
-        triggerColorChange();
-    }
-
-    private void triggerCompositionChange() {
-        for (PixlerListener listener : listeners) {
-            listener.onCompositionChanged(getComposition());
-        }
-    }
-
-    private void triggerColorChange() {
-        for (PixlerListener listener : listeners) {
-            listener.onColorChanged(getColor());
-        }
-    }
-
-    public interface PixlerListener {
-
-        void onCompositionChanged(Composition composition);
-
-        void onColorChanged(int color);
-
-        void onRegistered(PixlerController controller);
     }
 }
