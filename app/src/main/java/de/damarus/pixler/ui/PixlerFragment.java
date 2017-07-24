@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,16 +83,39 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onStart() {
+        super.onStart();
 
-        PixlerManager.getInstance().registerListener(this);
-        PixlerManager.getInstance().registerListener(canvas);
+        PixlerManager man = PixlerManager.getInstance();
+
+        man.registerListener(this);
+        man.registerListener(canvas);
+
+        if (man.canResumeState()) {
+            man.resumeSavedState();
+        } else {
+            // First time color init
+            man.changeColor(ContextCompat.getColor(getContext(), R.color.pixlerPrimary));
+            fabSecondaryColor.setColorNormal(ContextCompat.getColor(getContext(), R.color.pixlerSecondary));
+            fabSecondaryColor.setColorPressed(ContextCompat.getColor(getContext(), R.color.pixlerSecondary));
+
+            canvas.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                @Override
+                public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                    if (!man.isInitialized()) {
+                        int longEdge = Math.max(canvas.getWidth(), canvas.getHeight());
+                        man.createNewPicture(longEdge, longEdge);
+                    }
+
+                    v.removeOnLayoutChangeListener(this);
+                }
+            });
+        }
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
+        super.onStop();
 
         PixlerManager.getInstance().unregisterListener(this);
         PixlerManager.getInstance().unregisterListener(canvas);
@@ -114,10 +138,8 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
 
     @Override
     public void onColorChanged(int color) {
-        if (fabPrimaryColor != null) {
-            fabPrimaryColor.setColorNormal(color);
-            fabPrimaryColor.setColorPressed(color);
-        }
+        fabPrimaryColor.setColorNormal(color);
+        fabPrimaryColor.setColorPressed(color);
     }
 
     @Override

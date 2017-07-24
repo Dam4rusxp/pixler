@@ -13,7 +13,6 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
 
 public class PixlerActivity extends AppCompatActivity
@@ -56,10 +55,6 @@ public class PixlerActivity extends AppCompatActivity
             frag = PixlerFragment.createInstance();
             getSupportFragmentManager().beginTransaction().add(R.id.contentFragment, frag).commit();
         }
-        
-        // Restore state
-        PixlerManager pixl = PixlerManager.getInstance();
-        pixl.registerListener(frag);
     }
 
     @Override

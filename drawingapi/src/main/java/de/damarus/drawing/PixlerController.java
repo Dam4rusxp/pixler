@@ -1,5 +1,6 @@
 package de.damarus.drawing;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import de.damarus.drawing.action.Action;
 import de.damarus.drawing.action.PencilAction;
@@ -8,6 +9,9 @@ import de.damarus.drawing.data.Composition;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+import static com.google.common.base.Preconditions.checkPositionIndex;
+import static com.google.common.base.Preconditions.checkState;
+
 public class PixlerController {
 
     public static final int DPP = 20;
@@ -15,43 +19,75 @@ public class PixlerController {
     private Composition composition;
     private Action currentAction;
 
+    private int activeLayerIndex = -1;
+
     private int color = 0xff_00_00_00;
 
     private transient Deque<Action> actionStack = new ArrayDeque<>();
     private transient Deque<Action> redoStack = new ArrayDeque<>();
 
     public void initialize(Composition comp) {
-        if (composition != null) throw new IllegalStateException();
+        checkState(!isInitialized());
 
         composition = comp;
     }
 
     public void initialize(int w, int h) {
-        if (composition != null) throw new IllegalStateException();
+        checkState(!isInitialized());
 
-        createStartupBitmap(w, h);
+        int width = w / DPP;
+        int height = h / DPP;
+
+        composition = Composition.createComposition(width, height);
+        activeLayerIndex++;
+
+        Canvas layerCanvas = new Canvas(getActiveLayer());
+        layerCanvas.drawRGB(128, 128, 128);
     }
 
     public boolean isInitialized() {
         return composition != null;
     }
 
-    private void createStartupBitmap(int wholeWidth, int wholeHeight) {
-        int width = wholeWidth / DPP;
-        int height = wholeHeight / DPP;
-
-        composition = Composition.createComposition(width, height);
-
-        Canvas layerCanvas = new Canvas(composition.getActiveLayer());
-        layerCanvas.drawRGB(128, 128, 128);
-    }
-
     public void applyActionAt(float x, float y) {
+        checkState(isInitialized());
+
         currentAction = new PencilAction();
         ((PencilAction) currentAction).setColor(getColor());
-        currentAction.apply(composition.getActiveLayer(), x, y);
+        currentAction.apply(getActiveLayer(), x, y);
         getActionStack().push(currentAction);
         getRedoStack().clear();
+    }
+
+    public void setActiveLayer(int newActiveLayer) {
+        checkState(isInitialized());
+        checkPositionIndex(newActiveLayer, composition.getLayers().size());
+
+        activeLayerIndex = newActiveLayer;
+    }
+
+    /**
+     * Adds a new layer above the active one, and makes it active.
+     */
+    public void addNewLayer() {
+        checkState(isInitialized());
+
+        composition.addLayer(++activeLayerIndex);
+    }
+
+    public void removeActiveLayer() {
+        checkState(isInitialized());
+
+        activeLayerIndex = Math.min(activeLayerIndex, composition.getLayers().size() - 1);
+    }
+
+    public Bitmap getActiveLayer() {
+        if (isInitialized()) return composition.getLayers().get(activeLayerIndex);
+        return null;
+    }
+
+    public int getActiveLayerIndex() {
+        return activeLayerIndex;
     }
 
     @SuppressWarnings("Duplicates")

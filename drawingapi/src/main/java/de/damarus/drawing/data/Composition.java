@@ -1,7 +1,6 @@
 package de.damarus.drawing.data;
 
 import android.graphics.Bitmap;
-import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,8 +11,6 @@ public class Composition {
     private int width = -1;
     private int height = -1;
 
-    private int activeLayerIndex = -1;
-
     private List<Bitmap> layers = new ArrayList<>();
 
     private Composition() {
@@ -23,7 +20,7 @@ public class Composition {
         Composition c = new Composition();
         c.width = w;
         c.height = h;
-        c.addLayer();
+        c.addLayer(0);
 
         return c;
     }
@@ -32,32 +29,16 @@ public class Composition {
         return layers.get(layerIndex);
     }
 
-    public void addLayer() {
+    public void addLayer(int at) {
         Bitmap newLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        layers.add(++activeLayerIndex, newLayer);
+        layers.add(at, newLayer);
     }
 
 
-    public void removeLayer() {
+    public void removeLayer(int index) {
         if (layers.size() <= 1) throw new IllegalStateException("Can't remove last layer");
 
-        layers.remove(activeLayerIndex);
-        activeLayerIndex = Math.min(activeLayerIndex, layers.size() - 1);
-    }
-
-
-    public void setActiveLayer(int newActiveLayer) {
-        Preconditions.checkPositionIndex(newActiveLayer, layers.size(), "layer index");
-
-        this.activeLayerIndex = newActiveLayer;
-    }
-
-    public Bitmap getActiveLayer() {
-        return layers.get(activeLayerIndex);
-    }
-
-    public int getActiveLayerIndex() {
-        return activeLayerIndex;
+        layers.remove(index);
     }
 
     public List<Bitmap> getLayers() {

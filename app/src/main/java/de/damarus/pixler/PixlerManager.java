@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 public class PixlerManager {
 
     private static PixlerManager instance;
 
-    private PixlerController pixl;
+    private final PixlerController pixl = new PixlerController();
 
     private List<PixlerListener> listeners = new ArrayList<>();
 
@@ -29,10 +30,17 @@ public class PixlerManager {
     }
 
     public void createNewLayer() {
-        if (!isInitialized()) throw new IllegalStateException();
+        checkState(isInitialized());
 
-        pixl.getComposition().addLayer();
+        pixl.addNewLayer();
         triggerActiveLayerChange();
+    }
+
+    public void removeLayer() {
+        checkState(isInitialized());
+
+        pixl.removeActiveLayer();
+        triggerCompositionChange();
     }
 
     public void resumeSavedState() {
@@ -51,7 +59,7 @@ public class PixlerManager {
      * If true, it's guaranteed that there is a valid PixlerController in initialized state, ready for working on.
      */
     public boolean isInitialized() {
-        return pixl != null && pixl.isInitialized();
+        return pixl.isInitialized();
     }
 
     public void createNewPicture(int width, int height) {
@@ -106,7 +114,7 @@ public class PixlerManager {
     }
 
     private void triggerActiveLayerChange(PixlerListener listener) {
-        checkNotNull(listener).onActiveLayerChanged(pixl.getComposition().getActiveLayerIndex());
+        checkNotNull(listener).onActiveLayerChanged(pixl.getActiveLayerIndex());
     }
 
     private void triggerCompositionChange() {
@@ -116,7 +124,7 @@ public class PixlerManager {
     }
 
     private void triggerCompositionChange(PixlerListener listener) {
-        listener.onCompositionChanged(pixl.getComposition(), pixl.getComposition().getActiveLayerIndex());
+        listener.onCompositionChanged(pixl.getComposition(), pixl.getActiveLayerIndex());
     }
 
     private void triggerColorChange() {

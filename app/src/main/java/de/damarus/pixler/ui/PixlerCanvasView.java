@@ -252,6 +252,7 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
     @Override
     public void onCompositionChanged(Composition composition, int layer) {
         currentComposition = composition;
+        if (currentComposition != null) updateCamera(true);
         invalidate();
     }
 
