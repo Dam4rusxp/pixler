@@ -1,8 +1,10 @@
 package de.damarus.drawing.data;
 
 import android.graphics.Bitmap;
+import com.google.common.base.Preconditions;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Composition {
@@ -26,11 +28,13 @@ public class Composition {
         return c;
     }
 
-    public Bitmap addLayer() {
+    public Bitmap getLayer(int layerIndex) {
+        return layers.get(layerIndex);
+    }
+
+    public void addLayer() {
         Bitmap newLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         layers.add(++activeLayerIndex, newLayer);
-
-        return newLayer;
     }
 
 
@@ -43,8 +47,7 @@ public class Composition {
 
 
     public void setActiveLayer(int newActiveLayer) {
-        if (newActiveLayer < 0 || newActiveLayer >= layers.size())
-            throw new IllegalArgumentException("newActiveLayer is out of range");
+        Preconditions.checkPositionIndex(newActiveLayer, layers.size(), "layer index");
 
         this.activeLayerIndex = newActiveLayer;
     }
@@ -53,8 +56,12 @@ public class Composition {
         return layers.get(activeLayerIndex);
     }
 
+    public int getActiveLayerIndex() {
+        return activeLayerIndex;
+    }
+
     public List<Bitmap> getLayers() {
-        return layers;
+        return Collections.unmodifiableList(layers);
     }
 
     public int getWidth() {
