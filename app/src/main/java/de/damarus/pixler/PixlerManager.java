@@ -29,10 +29,18 @@ public class PixlerManager {
         return instance;
     }
 
+    public void onLayerSelected(int layer) {
+        checkState(isInitialized());
+
+        pixl.setActiveLayer(layer);
+        triggerActiveLayerChange();
+    }
+
     public void createNewLayer() {
         checkState(isInitialized());
 
         pixl.addNewLayer();
+        triggerCompositionChange();
         triggerActiveLayerChange();
     }
 
@@ -41,6 +49,7 @@ public class PixlerManager {
 
         pixl.removeActiveLayer();
         triggerCompositionChange();
+        triggerActiveLayerChange();
     }
 
     public void resumeSavedState() {

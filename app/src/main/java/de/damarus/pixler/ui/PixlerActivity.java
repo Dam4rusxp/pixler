@@ -6,14 +6,18 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ListView;
+import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
+import de.damarus.pixler.layers.LayerAdapter;
 
 public class PixlerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -29,8 +33,14 @@ public class PixlerActivity extends AppCompatActivity
     @BindView(R.id.nav_view)
     NavigationView navigationView;
 
-    @BindView(R.id.layers_drawer)
-    ListView layerDrawer;
+    @BindView(R.id.layers_recycler)
+    RecyclerView layerDrawer;
+
+    @BindView(R.id.btn_add_layer)
+    ImageButton btnAddLayer;
+
+    @BindView(R.id.btn_remove_layer)
+    ImageButton btnRmLayer;
 
     private RelativeLayout navHeader;
 
@@ -55,6 +65,27 @@ public class PixlerActivity extends AppCompatActivity
             frag = PixlerFragment.createInstance();
             getSupportFragmentManager().beginTransaction().add(R.id.contentFragment, frag).commit();
         }
+
+        // Initialize layers drawer
+        layerDrawer.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, true));
+        layerDrawer.setAdapter(new LayerAdapter(this));
+
+        btnAddLayer.setOnClickListener(view -> PixlerManager.getInstance().createNewLayer());
+        btnRmLayer.setOnClickListener(view -> PixlerManager.getInstance().removeLayer());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        PixlerManager.getInstance().registerListener((LayerAdapter) layerDrawer.getAdapter());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        PixlerManager.getInstance().unregisterListener((LayerAdapter) layerDrawer.getAdapter());
     }
 
     @Override

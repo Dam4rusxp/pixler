@@ -6,4 +6,7 @@
 
     <color name="pixlerPrimary">#2AE</color>
     <color name="pixlerSecondary">#6C1</color>
+
+    <color name="layersUnselected">#555</color>
+    <color name="layersSelected">@color/colorAccent</color>
 </resources>

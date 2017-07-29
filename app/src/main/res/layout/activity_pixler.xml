@@ -22,9 +22,10 @@
             android:layout_height="match_parent"
             android:layout_below="@id/toolbar">
 
-        <FrameLayout android:layout_width="match_parent"
-                     android:layout_height="match_parent"
-                     android:id="@+id/contentFragment"/>
+        <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/contentFragment"/>
 
         <android.support.design.widget.NavigationView
                 android:id="@+id/nav_view"
@@ -35,12 +36,56 @@
                 app:headerLayout="@layout/nav_header"
                 app:menu="@menu/drawer_menu"/>
 
-        <ListView
-                android:id="@+id/layers_drawer"
-                android:layout_width="240dp"
+        <android.support.design.widget.NavigationView
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_gravity="end"
-                android:choiceMode="singleChoice"
-                android:background="#444"/>
+                android:layout_gravity="end">
+
+            <android.support.constraint.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/layersUnselected">
+
+                <android.support.v7.widget.RecyclerView
+                        android:id="@+id/layers_recycler"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:scrollbars="vertical"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:layout_marginTop="0dp"
+                        android:layout_marginBottom="8dp"
+                        app:layout_constraintBottom_toTopOf="@+id/layer_controls"
+                        android:layout_marginLeft="0dp"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        android:layout_marginRight="0dp"
+                        app:layout_constraintRight_toRightOf="parent"/>
+
+                <LinearLayout
+                        android:id="@+id/layer_controls"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        android:layout_marginRight="8dp"
+                        app:layout_constraintRight_toRightOf="parent">
+
+                    <ImageButton
+                            android:id="@+id/btn_add_layer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/add_layer"/>
+
+                    <ImageButton
+                            android:id="@+id/btn_remove_layer"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/remove_layer"/>
+                </LinearLayout>
+            </android.support.constraint.ConstraintLayout>
+        </android.support.design.widget.NavigationView>
+
     </android.support.v4.widget.DrawerLayout>
 </RelativeLayout>
