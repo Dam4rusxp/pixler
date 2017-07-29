@@ -34,13 +34,12 @@ android {
     }
 }
 
+repositories {
+    maven {url 'https://maven.google.com'}
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-
-    // Support libs
-    compile "com.android.support:appcompat-v7:${supportLibVersion}"
-    compile "com.android.support:design:${supportLibVersion}"
-    compile "com.android.support:support-v4:${supportLibVersion}"
 
     // GSON (Persistence)
     compile 'com.google.code.gson:gson:2.8.1'
