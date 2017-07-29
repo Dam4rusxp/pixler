@@ -78,6 +78,9 @@ public class PixlerController {
     public void removeActiveLayer() {
         checkState(isInitialized());
 
+        if (composition.getLayers().size() <= 1) return;
+
+        composition.removeLayer(activeLayerIndex);
         activeLayerIndex = Math.min(activeLayerIndex, composition.getLayers().size() - 1);
     }
 
