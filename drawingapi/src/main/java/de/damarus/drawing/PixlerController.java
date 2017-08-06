@@ -75,13 +75,14 @@ public class PixlerController {
         composition.addLayer(++activeLayerIndex);
     }
 
-    public void removeActiveLayer() {
+    public boolean removeActiveLayer() {
         checkState(isInitialized());
 
-        if (composition.getLayers().size() <= 1) return;
+        if (composition.getLayers().size() <= 1) return false;
 
         composition.removeLayer(activeLayerIndex);
         activeLayerIndex = Math.min(activeLayerIndex, composition.getLayers().size() - 1);
+        return true;
     }
 
     public Bitmap getActiveLayer() {

@@ -1,7 +1,6 @@
 package de.damarus.pixler.layers;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
@@ -13,16 +12,75 @@ import butterknife.ButterKnife;
 import de.damarus.drawing.data.Composition;
 import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
+import de.damarus.pixler.SimplePixlerListener;
 
-public class LayerAdapter extends RecyclerView.Adapter<LayerAdapter.ViewHolder> implements PixlerManager.PixlerListener {
+public class LayerAdapter extends RecyclerView.Adapter<LayerAdapter.ViewHolder> {
 
     private final Context context;
 
     private int selectedLayer = -1;
-    private Bitmap[] layers = new Bitmap[0];
+    private Composition comp;
+
+    private final PixlerManager.PixlerListener listener = new SimplePixlerListener() {
+
+        @Override
+        public void onActiveLayerChanged(int newSelected) {
+            if (newSelected != selectedLayer) {
+                int oldSelected = selectedLayer;
+                selectedLayer = newSelected;
+                notifyItemChanged(oldSelected);
+                notifyItemChanged(selectedLayer);
+            }
+        }
+
+        @Override
+        public void onLayerAdded(int addedIndex) {
+            notifyItemInserted(addedIndex);
+        }
+
+        @Override
+        public void onLayerRemoved(int removedIndex) {
+            notifyItemRemoved(removedIndex);
+            // Force update in onActiveLayerChanged
+            selectedLayer = -1;
+        }
+
+        @Override
+        public void onLayerPainted(int changedLayer) {
+            if (changedLayer == -1) {
+                notifyDataSetChanged();
+            } else {
+                notifyItemChanged(changedLayer);
+            }
+        }
+
+        @Override
+        public void onUnregistered() {
+            comp = null;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public void onCompositionChanged(Composition newComposition) {
+            if (newComposition != comp) {
+                comp = newComposition;
+                notifyDataSetChanged();
+            }
+        }
+    };
 
     public LayerAdapter(Context context) {
         this.context = context;
+    }
+
+    @Override
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
+        PixlerManager.getInstance().registerListener(listener);
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(RecyclerView recyclerView) {
+        PixlerManager.getInstance().unregisterListener(listener);
     }
 
     @Override
@@ -47,7 +105,7 @@ public class LayerAdapter extends RecyclerView.Adapter<LayerAdapter.ViewHolder> 
         ImageView v = holder.imgView;
 
         // Disable blurry scaling
-        BitmapDrawable drawable = new BitmapDrawable(context.getResources(), layers[position]);
+        BitmapDrawable drawable = new BitmapDrawable(context.getResources(), comp.getLayer(position));
         drawable.setFilterBitmap(false);
 
         v.setImageDrawable(drawable);
@@ -55,35 +113,9 @@ public class LayerAdapter extends RecyclerView.Adapter<LayerAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return layers.length;
+        if (comp == null) return 0;
+        return comp.getLayers().size();
     }
-
-    @Override
-    public void onRegistered() {}
-
-    @Override
-    public void onActiveLayerChanged(int newLayer) {
-        if (newLayer != selectedLayer) {
-            int temp = selectedLayer;
-            selectedLayer = newLayer;
-            notifyItemChanged(temp);
-            notifyItemChanged(selectedLayer);
-        }
-    }
-
-    @Override
-    public void onCompositionChanged(Composition composition, int layer) {
-        if (composition != null) {
-            Bitmap[] newLayers = new Bitmap[composition.getLayers().size()];
-            composition.getLayers().toArray(newLayers);
-            layers = newLayers;
-
-            notifyDataSetChanged();
-        }
-    }
-
-    @Override
-    public void onColorChanged(int color) {}
 
     class ViewHolder extends RecyclerView.ViewHolder {
 

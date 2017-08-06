@@ -10,8 +10,9 @@ import android.view.View;
 import android.widget.OverScroller;
 import de.damarus.drawing.data.Composition;
 import de.damarus.pixler.PixlerManager;
+import de.damarus.pixler.SimplePixlerListener;
 
-public class PixlerCanvasView extends View implements PixlerManager.PixlerListener {
+public class PixlerCanvasView extends View {
 
     public static final int DPP = 20;
     public static final int OVERSCROLL = 150;
@@ -26,6 +27,37 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
     private Matrix inverseMatrix = new Matrix();
 
     private Composition currentComposition;
+
+    private final PixlerManager.PixlerListener listener = new SimplePixlerListener() {
+
+        @Override
+        public void onLayerAdded(int addedIndex) {
+            invalidate();
+        }
+
+        @Override
+        public void onLayerRemoved(int removedIndex) {
+            invalidate();
+        }
+
+        @Override
+        public void onLayerPainted(int changedLayer) {
+            invalidate();
+        }
+
+        @Override
+        public void onUnregistered() {
+            currentComposition = null;
+            invalidate();
+        }
+
+        @Override
+        public void onCompositionChanged(Composition composition) {
+            currentComposition = composition;
+            if (currentComposition != null) updateCamera(true);
+            invalidate();
+        }
+    };
 
     public PixlerCanvasView(Context context) {
         super(context);
@@ -131,6 +163,20 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
     }
 
     @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+
+        PixlerManager.getInstance().registerListener(listener);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+
+        PixlerManager.getInstance().unregisterListener(listener);
+    }
+
+    @Override
     public void computeScroll() {
         if (!scroller.computeScrollOffset()) return;
 
@@ -153,42 +199,10 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
         lastY = y;
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        viewport = new Rect(0, 0, w, h);
-
-        // Those are both 0 when the view is displayed for the first time
-        if (oldw == 0 && oldh == 0 && !isInEditMode()) {
-//            longEdge = Math.max(w, h);
-
-//            if (main != null) main.initialize(longEdge, longEdge);
-        }
-
-        updateCamera();
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        // Background
-        canvas.drawRGB(15, 15, 15);
-
-        // Working Image
-//        canvas.drawBitmap(picBitmap, null, viewport, drawPaint);
-        canvas.clipRect(viewport);
-        canvas.setMatrix(drawMatrix);
-        if (currentComposition != null) {
-            for (Bitmap layer : currentComposition.getLayers()) {
-                canvas.drawBitmap(layer, viewport.left, viewport.top, drawPaint);
-            }
-        } else {
-            canvas.drawRGB(128, 128, 128);
-        }
-
-        // UI...
-    }
-
-    private void updateCamera() {
-        updateCamera(true);
+    private RectF getWindow() {
+        RectF rWindow = getImageBounds();
+        drawMatrix.mapRect(rWindow);
+        return rWindow;
     }
 
     private void updateCamera(boolean clamp) {
@@ -221,20 +235,6 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
         postInvalidateOnAnimation();
     }
 
-    private RectF getWindow() {
-        RectF rWindow = getImageBounds();
-        drawMatrix.mapRect(rWindow);
-        return rWindow;
-    }
-
-    private float[] getScrollBounds(RectF window) {
-        return new float[]{
-                viewport.width() - window.width() - OVERSCROLL,
-                OVERSCROLL,
-                viewport.height() - window.height() - OVERSCROLL,
-                OVERSCROLL};
-    }
-
     private RectF getImageBounds() {
         if (currentComposition == null) return new RectF();
 
@@ -245,22 +245,49 @@ public class PixlerCanvasView extends View implements PixlerManager.PixlerListen
                 currentComposition.getHeight());
     }
 
-    @Override
-    public void onActiveLayerChanged(int selectedLayer) {
+    private float[] getScrollBounds(RectF window) {
+        return new float[]{
+                viewport.width() - window.width() - OVERSCROLL,
+                OVERSCROLL,
+                viewport.height() - window.height() - OVERSCROLL,
+                OVERSCROLL};
     }
 
     @Override
-    public void onCompositionChanged(Composition composition, int layer) {
-        currentComposition = composition;
-        if (currentComposition != null) updateCamera(true);
-        invalidate();
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        viewport = new Rect(0, 0, w, h);
+
+        // Those are both 0 when the view is displayed for the first time
+        if (oldw == 0 && oldh == 0 && !isInEditMode()) {
+//            longEdge = Math.max(w, h);
+
+//            if (main != null) main.initialize(longEdge, longEdge);
+        }
+
+        updateCamera();
+    }
+
+    private void updateCamera() {
+        updateCamera(true);
     }
 
     @Override
-    public void onColorChanged(int color) {
-    }
+    protected void onDraw(Canvas canvas) {
+        // Background
+        canvas.drawRGB(15, 15, 15);
 
-    @Override
-    public void onRegistered() {
+        // Working Image
+//        canvas.drawBitmap(picBitmap, null, viewport, drawPaint);
+        canvas.clipRect(viewport);
+        canvas.setMatrix(drawMatrix);
+        if (currentComposition != null) {
+            for (Bitmap layer : currentComposition.getLayers()) {
+                canvas.drawBitmap(layer, viewport.left, viewport.top, drawPaint);
+            }
+        } else {
+            canvas.drawRGB(128, 128, 128);
+        }
+
+        // UI...
     }
 }

@@ -75,20 +75,6 @@ public class PixlerActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-
-        PixlerManager.getInstance().registerListener((LayerAdapter) layerDrawer.getAdapter());
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        PixlerManager.getInstance().unregisterListener((LayerAdapter) layerDrawer.getAdapter());
-    }
-
-    @Override
     public void onBackPressed() {
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);

@@ -12,11 +12,11 @@ import android.view.ViewGroup;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import com.github.clans.fab.FloatingActionButton;
-import de.damarus.drawing.data.Composition;
 import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
+import de.damarus.pixler.SimplePixlerListener;
 
-public class PixlerFragment extends Fragment implements PixlerManager.PixlerListener {
+public class PixlerFragment extends Fragment {
 
     @BindView(R.id.main_canvas)
     PixlerCanvasView canvas;
@@ -32,6 +32,15 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
 
     @BindView(R.id.pixlerSecondaryColor)
     FloatingActionButton fabSecondaryColor;
+
+    private final PixlerManager.PixlerListener listener = new SimplePixlerListener() {
+
+        @Override
+        public void onColorChanged(int color) {
+            fabPrimaryColor.setColorNormal(color);
+            fabPrimaryColor.setColorPressed(color);
+        }
+    };
 
     // Required empty constructor
     public PixlerFragment() {
@@ -88,8 +97,7 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
 
         PixlerManager man = PixlerManager.getInstance();
 
-        man.registerListener(this);
-        man.registerListener(canvas);
+        man.registerListener(listener);
 
         if (man.canResumeState()) {
             man.resumeSavedState();
@@ -117,8 +125,7 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
     public void onStop() {
         super.onStop();
 
-        PixlerManager.getInstance().unregisterListener(this);
-        PixlerManager.getInstance().unregisterListener(canvas);
+        PixlerManager.getInstance().unregisterListener(listener);
     }
 
     @Override
@@ -126,23 +133,5 @@ public class PixlerFragment extends Fragment implements PixlerManager.PixlerList
         super.onSaveInstanceState(outState);
 
         outState.putInt("secondary-color", fabSecondaryColor.getColorNormal());
-    }
-
-    @Override
-    public void onActiveLayerChanged(int selectedLayer) {
-    }
-
-    @Override
-    public void onCompositionChanged(Composition composition, int layer) {
-    }
-
-    @Override
-    public void onColorChanged(int color) {
-        fabPrimaryColor.setColorNormal(color);
-        fabPrimaryColor.setColorPressed(color);
-    }
-
-    @Override
-    public void onRegistered() {
     }
 }

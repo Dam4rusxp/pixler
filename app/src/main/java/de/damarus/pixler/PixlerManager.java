@@ -16,7 +16,7 @@ public class PixlerManager {
 
     private final PixlerController pixl = new PixlerController();
 
-    private List<PixlerListener> listeners = new ArrayList<>();
+    private List<PixlerListener> pixlerListeners = new ArrayList<>();
 
     private PixlerManager() {
     }
@@ -36,20 +36,38 @@ public class PixlerManager {
         triggerActiveLayerChange();
     }
 
+    /**
+     * If true, it's guaranteed that there is a valid PixlerController in initialized state, ready for working on.
+     */
+    public boolean isInitialized() {
+        return pixl.isInitialized();
+    }
+
+    private void triggerActiveLayerChange() {
+        for (PixlerListener listener : pixlerListeners) {
+            checkNotNull(listener).onActiveLayerChanged(pixl.getActiveLayerIndex());
+        }
+    }
+
     public void createNewLayer() {
         checkState(isInitialized());
 
         pixl.addNewLayer();
-        triggerCompositionChange();
+
+        for (PixlerListener listener : pixlerListeners) listener.onLayerAdded(pixl.getActiveLayerIndex());
         triggerActiveLayerChange();
     }
 
     public void removeLayer() {
         checkState(isInitialized());
 
-        pixl.removeActiveLayer();
-        triggerCompositionChange();
-        triggerActiveLayerChange();
+        int removedLayer = pixl.getActiveLayerIndex();
+        boolean removed = pixl.removeActiveLayer();
+
+        if (removed) {
+            for (PixlerListener listener : pixlerListeners) listener.onLayerRemoved(removedLayer);
+            triggerActiveLayerChange();
+        }
     }
 
     public void resumeSavedState() {
@@ -64,31 +82,42 @@ public class PixlerManager {
         return false;
     }
 
-    /**
-     * If true, it's guaranteed that there is a valid PixlerController in initialized state, ready for working on.
-     */
-    public boolean isInitialized() {
-        return pixl.isInitialized();
-    }
-
     public void createNewPicture(int width, int height) {
         pixl.initialize(width, height);
         triggerCompositionChange();
+        triggerActiveLayerChange();
+    }
+
+
+    private void triggerCompositionChange() {
+        for (PixlerListener listener : pixlerListeners) {
+            listener.onCompositionChanged(pixl.getComposition());
+        }
     }
 
     public void onSingleTap(float x, float y) {
         pixl.applyActionAt(x, y);
-        triggerCompositionChange();
+        triggerActiveLayerPainted();
+    }
+
+    private void triggerActiveLayerPainted() {
+        for (PixlerListener listener : pixlerListeners) {
+            listener.onLayerPainted(pixl.getActiveLayerIndex());
+        }
     }
 
     public void undoAction() {
-        boolean done = pixl.undoAction();
-        if (done) triggerCompositionChange();
+        if (pixl.undoAction()) triggerAllLayersPainted();
+    }
+
+    private void triggerAllLayersPainted() {
+        for (PixlerListener listener : pixlerListeners) {
+            listener.onLayerPainted(-1);
+        }
     }
 
     public void redoAction() {
-        boolean done = pixl.redoAction();
-        if (done) triggerCompositionChange();
+        if (pixl.redoAction()) triggerAllLayersPainted();
     }
 
     public void changeColor(int color) {
@@ -96,64 +125,47 @@ public class PixlerManager {
         triggerColorChange();
     }
 
+    private void triggerColorChange() {
+        for (PixlerListener listener : pixlerListeners) {
+            listener.onColorChanged(pixl.getColor());
+        }
+    }
+
     public boolean isRegistered(PixlerListener listener) {
-        return listeners.contains(listener);
+        return pixlerListeners.contains(listener);
     }
 
     public void registerListener(PixlerListener listener) {
-        if (listeners.contains(checkNotNull(listener))) return;
+        if (pixlerListeners.contains(checkNotNull(listener))) return;
 
-        listeners.add(listener);
-        listener.onRegistered();
-
-        // Make the view display all the stuff we can give it, so it doesn't have to do that itself
-        triggerActiveLayerChange(listener);
-        triggerCompositionChange(listener);
-        triggerColorChange(listener);
+        pixlerListeners.add(listener);
+        listener.onRegistered(pixl.getComposition(), pixl.getActiveLayerIndex(), pixl.getColor());
     }
 
     public void unregisterListener(PixlerListener listener) {
-        listeners.remove(checkNotNull(listener));
-    }
-
-    private void triggerActiveLayerChange() {
-        for (PixlerListener listener : listeners) {
-            triggerActiveLayerChange(listener);
-        }
-    }
-
-    private void triggerActiveLayerChange(PixlerListener listener) {
-        checkNotNull(listener).onActiveLayerChanged(pixl.getActiveLayerIndex());
-    }
-
-    private void triggerCompositionChange() {
-        for (PixlerListener listener : listeners) {
-            triggerCompositionChange(listener);
-        }
-    }
-
-    private void triggerCompositionChange(PixlerListener listener) {
-        listener.onCompositionChanged(pixl.getComposition(), pixl.getActiveLayerIndex());
-    }
-
-    private void triggerColorChange() {
-        for (PixlerListener listener : listeners) {
-            triggerColorChange(listener);
-        }
-    }
-
-    private void triggerColorChange(PixlerListener listener) {
-        listener.onColorChanged(pixl.getColor());
+        boolean removed = pixlerListeners.remove(checkNotNull(listener));
+        if (removed) listener.onUnregistered();
     }
 
     public interface PixlerListener {
 
-        void onRegistered();
+        void onRegistered(Composition comp, int activeLayer, int primaryColor);
+
+        void onUnregistered();
+
+        void onCompositionChanged(Composition composition);
+
+        void onColorChanged(int color);
 
         void onActiveLayerChanged(int selectedLayer);
 
-        void onCompositionChanged(Composition composition, int layer);
+        void onLayerAdded(int addedIndex);
 
-        void onColorChanged(int color);
+        void onLayerRemoved(int removedIndex);
+
+        /**
+         * changedLayer is -1 if all layers should be updated
+         */
+        void onLayerPainted(int changedLayer);
     }
 }
