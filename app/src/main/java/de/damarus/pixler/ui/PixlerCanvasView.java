@@ -261,7 +261,7 @@ public class PixlerCanvasView extends View {
         if (oldw == 0 && oldh == 0 && !isInEditMode()) {
 //            longEdge = Math.max(w, h);
 
-//            if (main != null) main.initialize(longEdge, longEdge);
+//            if (main != null) main.createStartupComposition(longEdge, longEdge);
         }
 
         updateCamera();

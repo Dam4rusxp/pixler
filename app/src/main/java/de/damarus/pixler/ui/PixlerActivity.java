@@ -1,5 +1,7 @@
 package de.damarus.pixler.ui;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -13,16 +15,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import de.damarus.pixler.PixlerManager;
 import de.damarus.pixler.R;
 import de.damarus.pixler.layers.LayerAdapter;
 
+import java.io.FileNotFoundException;
+
 public class PixlerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     public static final String TAG_RETAINED_PIC = "RetainedPic";
+
+    public static final int PICK_IMAGE = 0;
 
     @BindView(R.id.drawerLayout)
     DrawerLayout drawer;
@@ -113,21 +120,43 @@ public class PixlerActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        switch (id) {
+            case R.id.nav_new:
+                // Start activity for creating a new image
+                break;
 
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+            case R.id.nav_open:
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+                break;
         }
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case PICK_IMAGE:
+                if (resultCode == RESULT_OK && data != null) {
+                    Uri selectedImage = data.getData();
+
+                    try {
+                        PixlerManager.getInstance().openFromUri(this, selectedImage);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Toast.makeText(this, "Aborted", Toast.LENGTH_SHORT).show();
+                }
+
+                break;
+        }
     }
 }

@@ -1,9 +1,15 @@
 package de.damarus.pixler;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.net.Uri;
 import de.damarus.drawing.PixlerController;
 import de.damarus.drawing.data.Composition;
 import kotlin.NotImplementedError;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class PixlerManager {
+
+    public static final int DPP = 20;
 
     private static PixlerManager instance;
 
@@ -29,6 +37,15 @@ public class PixlerManager {
         return instance;
     }
 
+    public void openFromUri(Context context, Uri uri) throws FileNotFoundException {
+        Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
+        Composition comp = Composition.createComposition(bitmap);
+        pixl.setComposition(comp);
+
+        triggerCompositionChange();
+        triggerActiveLayerChange();
+    }
+
     public void onLayerSelected(int layer) {
         checkState(isInitialized());
 
@@ -40,7 +57,7 @@ public class PixlerManager {
      * If true, it's guaranteed that there is a valid PixlerController in initialized state, ready for working on.
      */
     public boolean isInitialized() {
-        return pixl.isInitialized();
+        return pixl.hasComposition();
     }
 
     private void triggerActiveLayerChange() {
@@ -83,7 +100,14 @@ public class PixlerManager {
     }
 
     public void createNewPicture(int width, int height) {
-        pixl.initialize(width, height);
+        int scaledW = width / DPP;
+        int scaledH = height / DPP;
+
+        Composition comp = Composition.createComposition(scaledW, scaledH);
+        Canvas canvas = new Canvas(comp.getLayer(0));
+        canvas.drawRGB(150, 150, 150);
+        pixl.setComposition(comp);
+
         triggerCompositionChange();
         triggerActiveLayerChange();
     }

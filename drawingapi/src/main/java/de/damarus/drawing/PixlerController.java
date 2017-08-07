@@ -1,7 +1,6 @@
 package de.damarus.drawing;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import de.damarus.drawing.action.Action;
 import de.damarus.drawing.action.PencilAction;
 import de.damarus.drawing.data.Composition;
@@ -14,8 +13,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 public class PixlerController {
 
-    public static final int DPP = 20;
-
     private Composition composition;
     private Action currentAction;
 
@@ -26,31 +23,25 @@ public class PixlerController {
     private transient Deque<Action> actionStack = new ArrayDeque<>();
     private transient Deque<Action> redoStack = new ArrayDeque<>();
 
-    public void initialize(Composition comp) {
-        checkState(!isInitialized());
-
+    public void setComposition(Composition comp) {
         composition = comp;
+
+        actionStack.clear();
+        redoStack.clear();
+
+        if (composition != null) {
+            activeLayerIndex = 0;
+        } else {
+            activeLayerIndex = -1;
+        }
     }
 
-    public void initialize(int w, int h) {
-        checkState(!isInitialized());
-
-        int width = w / DPP;
-        int height = h / DPP;
-
-        composition = Composition.createComposition(width, height);
-        activeLayerIndex++;
-
-        Canvas layerCanvas = new Canvas(getActiveLayer());
-        layerCanvas.drawRGB(128, 128, 128);
-    }
-
-    public boolean isInitialized() {
+    public boolean hasComposition() {
         return composition != null;
     }
 
     public void applyActionAt(float x, float y) {
-        checkState(isInitialized());
+        checkState(hasComposition());
 
         currentAction = new PencilAction();
         ((PencilAction) currentAction).setColor(getColor());
@@ -60,7 +51,7 @@ public class PixlerController {
     }
 
     public void setActiveLayer(int newActiveLayer) {
-        checkState(isInitialized());
+        checkState(hasComposition());
         checkPositionIndex(newActiveLayer, composition.getLayers().size());
 
         activeLayerIndex = newActiveLayer;
@@ -70,13 +61,13 @@ public class PixlerController {
      * Adds a new layer above the active one, and makes it active.
      */
     public void addNewLayer() {
-        checkState(isInitialized());
+        checkState(hasComposition());
 
         composition.addLayer(++activeLayerIndex);
     }
 
     public boolean removeActiveLayer() {
-        checkState(isInitialized());
+        checkState(hasComposition());
 
         if (composition.getLayers().size() <= 1) return false;
 
@@ -86,7 +77,7 @@ public class PixlerController {
     }
 
     public Bitmap getActiveLayer() {
-        if (isInitialized()) return composition.getLayers().get(activeLayerIndex);
+        if (hasComposition()) return composition.getLayers().get(activeLayerIndex);
         return null;
     }
 

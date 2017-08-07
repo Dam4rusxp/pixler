@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class Composition {
 
     private int width = -1;
@@ -25,15 +27,33 @@ public class Composition {
         return c;
     }
 
+    public static Composition createComposition(Bitmap bitmap) {
+        checkNotNull(bitmap);
+
+        Composition c = new Composition();
+        c.width = bitmap.getWidth();
+        c.height = bitmap.getHeight();
+
+        Bitmap insertedBitmap = bitmap;
+        if (!bitmap.isMutable()) insertedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+        c.insertLayer(0, insertedBitmap);
+
+        return c;
+    }
+
     public Bitmap getLayer(int layerIndex) {
         return layers.get(layerIndex);
     }
 
     public void addLayer(int at) {
         Bitmap newLayer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        layers.add(at, newLayer);
+        insertLayer(at, newLayer);
     }
 
+    public void insertLayer(int at, Bitmap bitmap) {
+        layers.add(at, bitmap);
+    }
 
     public void removeLayer(int index) {
         if (layers.size() <= 1) throw new IllegalStateException("Can't remove last layer");
